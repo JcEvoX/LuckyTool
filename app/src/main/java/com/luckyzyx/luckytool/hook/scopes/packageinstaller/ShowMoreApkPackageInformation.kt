@@ -8,11 +8,6 @@ import android.widget.LinearLayout
 import androidx.collection.ArrayMap
 import androidx.collection.arrayMapOf
 import com.highcapable.betterandroid.ui.extension.view.child
-import com.highcapable.betterandroid.ui.extension.view.updatePadding
-import com.highcapable.hikage.core.base.Hikageable
-import com.highcapable.hikage.widget.android.widget.ImageView
-import com.highcapable.hikage.widget.android.widget.LinearLayout
-import com.highcapable.hikage.widget.android.widget.TextView
 import com.highcapable.kavaref.KavaRef.Companion.resolve
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.luckyzyx.luckytool.hook.scopes.appdetail.ApkDetailsView
@@ -33,7 +28,6 @@ class ShowMoreApkPackageInformation(val dexKitBridge: DexKitBridge) : YukiBaseHo
     private val cacheApkInfoMap = java.util.WeakHashMap<Any, ArrayMap<String, Any>>()
     private val cacheSourceInfoMap = java.util.WeakHashMap<Any, ArrayMap<String, Any>>()
 
-    @SuppressLint("SetTextI18n")
     override fun onHook() {
         val apkInfoViewClazz = "com.android.packageinstaller.oplus.view.ApkInfoView"
         val apkInfoClazz = "com.android.packageinstaller.oplus.common.ApkInfo"
@@ -121,145 +115,56 @@ class ShowMoreApkPackageInformation(val dexKitBridge: DexKitBridge) : YukiBaseHo
                         sourceDir = apkFilePath
                         publicSourceDir = apkFilePath
                     }?.loadIcon(pm)
-                    val newMin = packInfo?.applicationInfo?.minSdkVersion
-                    val newTarget = packInfo?.applicationInfo?.targetSdkVersion
 
                     val curPackInfo = PackageUtils(pm).getPackageInfo(packName, 0)
                     val curIcon = curPackInfo?.applicationInfo?.loadIcon(pm)
                     val curVersionName = curPackInfo?.versionName
-                    val curVersionCode = curPackInfo?.longVersionCode
-                    val curMin = curPackInfo?.applicationInfo?.minSdkVersion
-                    val curTarget = curPackInfo?.applicationInfo?.targetSdkVersion
 
-                    val isInstalled = curPackInfo != null
                     val isInstall = actionType == 0
                     val isUninstall = actionType == 1
 
-                    if (isInstall && android.os.Build.VERSION.SDK_INT >= 37) {
-                        // Reuse the same information cards as AppDetail, but use LinearLayout's
-                        // normal measurement here instead of its ConstraintLayout integration.
-                        val tag = "LuckyTool.ClassicApkDetails"
-                        val panel = apkInfoView.findViewWithTag(tag)
-                            ?: ApkDetailsView(context).also {
-                                it.tag = tag
-                                apkInfoView.addView(
-                                    it, LinearLayout.LayoutParams(
-                                        LinearLayout.LayoutParams.MATCH_PARENT,
-                                        LinearLayout.LayoutParams.WRAP_CONTENT
-                                    )
-                                )
-                            }
-                        for (i in 0 until apkInfoView.childCount) {
-                            val child = apkInfoView.child(i)
-                            child.visibility =
-                                if (child === panel) android.view.View.VISIBLE else android.view.View.GONE
-                        }
-                        apkInfoView.orientation = LinearLayout.VERTICAL
-                        apkInfoView.gravity = Gravity.TOP or Gravity.START
-                        val padding = (16 * context.resources.displayMetrics.density).toInt()
-                        apkInfoView.setPadding(padding, padding, padding, padding)
-                        apkInfoView.layoutParams = apkInfoView.layoutParams.apply {
-                            height = LinearLayout.LayoutParams.WRAP_CONTENT
-                        }
-                        panel.bind(
-                            packName,
-                            versionName,
-                            versionCode.toString(),
-                            apkFilePath,
-                            packInfo,
-                            curPackInfo
+                    // Reuse the same information cards as AppDetail for install, uninstall and
+                    // every other action, but use LinearLayout's normal measurement here instead
+                    // of its ConstraintLayout integration. The incoming/current comparison only
+                    // makes sense on install, so pass incoming as null otherwise.
+                    val tag = "LuckyTool.ClassicApkDetails"
+                    val panel = apkInfoView.findViewWithTag(tag) ?: ApkDetailsView(context).also {
+                        it.tag = tag
+                        apkInfoView.addView(
+                            it, LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT
+                            )
                         )
-                        panel.addAppHeader(
-                            appName, newIcon ?: curIcon ?: pm.defaultActivityIcon,
-                            getInstallSourceText(context, installSource), versionName,
-                            getApkSizeFormat(context, curPackInfo, apkSize, false)
-                        )
-                        return@after
                     }
-
-                    val hikageLayout = Hikageable {
-                        LinearLayout(
-                            lparams = LayoutParams(widthMatchParent = true),
-                            init = {
-                                orientation = LinearLayout.VERTICAL
-                                gravity = Gravity.CENTER_HORIZONTAL
-                                updatePadding(horizontal = 10.dp, vertical = 10.dp)
-                            }
-                        ) {
-                            ImageView(
-                                id = "app_icon",
-                                lparams = LayoutParams(width = 80.dp, height = 80.dp),
-                                init = {
-                                    setImageDrawable(if (isInstall) newIcon else curIcon)
-                                }
-                            )
-                            TextView(
-                                id = "app_name",
-                                lparams = LayoutParams(),
-                                init = {
-                                    text = appName
-                                    textSize = 22F
-                                    setTextIsSelectable(true)
-                                }
-                            )
-                            TextView(
-                                id = "app_packName",
-                                lparams = LayoutParams(),
-                                init = {
-                                    text = packName
-                                    setTextIsSelectable(true)
-                                }
-                            )
-                            TextView(
-                                id = "app_size",
-                                lparams = LayoutParams(),
-                                init = {
-                                    val format =
-                                        getApkSizeFormat(context, curPackInfo, apkSize, isUninstall)
-                                    text = "${getApkSizeText(context)} $format"
-                                    setTextIsSelectable(true)
-                                }
-                            )
-                            TextView(
-                                id = "app_version",
-                                lparams = LayoutParams(),
-                                init = {
-                                    text = if (isInstalled) {
-                                        if (isUninstall) "$versionName($versionCode)"
-                                        else """
-                                            Old: $curVersionName($curVersionCode)
-                                            New: $versionName($versionCode)
-                                        """.trimIndent()
-                                    } else "$versionName($versionCode)"
-                                    setTextIsSelectable(true)
-                                }
-                            )
-                            if (isInstall) TextView(
-                                id = "app_sdk",
-                                lparams = LayoutParams(),
-                                init = {
-                                    text = if (isInstalled) {
-                                        "Min SDK: $curMin → $newMin  |  Target SDK: $curTarget → $newTarget"
-                                    } else {
-                                        "Min SDK: $newMin  |  Target SDK: $newTarget"
-                                    }
-                                    setTextIsSelectable(true)
-                                }
-                            )
-                            if (isInstall) TextView(
-                                id = "app_from",
-                                lparams = LayoutParams(),
-                                init = {
-                                    text = getInstallSourceText(context, installSource)
-                                    setTextIsSelectable(true)
-                                }
-                            )
-                        }
+                    for (i in 0 until apkInfoView.childCount) {
+                        val child = apkInfoView.child(i)
+                        child.visibility =
+                            if (child === panel) android.view.View.VISIBLE else android.view.View.GONE
                     }
-                    val hikage = hikageLayout.create(context)
-
-                    apkInfoView.removeAllViews()
-                    apkInfoView.addView(hikage.root)
+                    apkInfoView.orientation = LinearLayout.VERTICAL
+                    apkInfoView.gravity = Gravity.TOP or Gravity.START
+                    val padding = (16 * context.resources.displayMetrics.density).toInt()
+                    apkInfoView.setPadding(padding, padding, padding, padding)
+                    apkInfoView.layoutParams = apkInfoView.layoutParams.apply {
+                        height = LinearLayout.LayoutParams.WRAP_CONTENT
+                    }
+                    panel.bind(
+                        packName,
+                        versionName,
+                        versionCode.toString(),
+                        apkFilePath,
+                        if (isInstall) packInfo else null,
+                        curPackInfo
+                    )
+                    panel.addAppHeader(
+                        appName,
+                        if (isInstall) newIcon ?: curIcon ?: pm.defaultActivityIcon
+                        else curIcon ?: pm.defaultActivityIcon,
+                        if (isInstall) getInstallSourceText(context, installSource) else "",
+                        if (isInstall) versionName else curVersionName ?: versionName,
+                        getApkSizeFormat(context, curPackInfo, apkSize, isUninstall)
+                    )
 
                     cacheApkInfoMap.clear()
                     cacheSourceInfoMap.clear()
@@ -276,28 +181,6 @@ class ShowMoreApkPackageInformation(val dexKitBridge: DexKitBridge) : YukiBaseHo
             if (sourceDir.isNullOrBlank()) size else File(sourceDir).length()
         } else size
         return OplusUnitConversionUtils(context).getUnitValue(apkSize)
-    }
-
-    @SuppressLint("DiscouragedApi")
-    private fun getApkVersionText(context: Context): String {
-        return safeOf("Version: ") {
-            context.resources.getString(
-                context.resources.getIdentifier(
-                    "app_info_version", "string", context.packageName
-                )
-            )
-        }
-    }
-
-    @SuppressLint("DiscouragedApi")
-    private fun getApkSizeText(context: Context): String {
-        return safeOf("Size: ") {
-            context.resources.getString(
-                context.resources.getIdentifier(
-                    "app_info_size", "string", context.packageName
-                )
-            )
-        }
     }
 
     @SuppressLint("DiscouragedApi")
