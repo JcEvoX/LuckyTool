@@ -86,31 +86,38 @@ object RefreshRateService : BaseControllerService<IRefreshRateController>() {
                 return try {
                     DisplayManagerUtils(null).apply {
                         val displayManager = getDisplayManagerService(context)
-                        LogUtils.d(TAG, "getSupportModes", "${displayManager.javaClass}", isDebug)
                         val display = displayManager.getDisplay(0)
-                        LogUtils.d(TAG, "getSupportModes", "${display.javaClass}", isDebug)
                         val displayInfo = DisplayInfo()
-                        if (!display.getDisplayInfo(displayInfo)) return list
-                        LogUtils.d(TAG, "getSupportModes", "getDisplayInfo true", isDebug)
-                        val dynamicInfo = getDynamicDisplayInfo(displayInfo) ?: return list
-                        LogUtils.d(TAG, "getSupportModes", "${dynamicInfo.javaClass}", isDebug)
+                        if (!display.getDisplayInfo(displayInfo)) {
+                            LogUtils.e(TAG, "getSupportModes", "getDisplayInfo -> false", true)
+                            return@apply
+                        }
+                        val dynamicInfo = getDynamicDisplayInfo(displayInfo)
+                        if (dynamicInfo == null) {
+                            LogUtils.e(
+                                TAG, "getSupportModes",
+                                "dynamicInfo is null, address = ${displayInfo.address}", true
+                            )
+                            return@apply
+                        }
                         DynamicDisplayInfoUtils(dynamicInfo).apply {
                             val allDisplayModes = getSupportedDisplayModes()
-                            LogUtils.d(
-                                TAG,
-                                "getSupportModes",
-                                "${allDisplayModes.toList()}",
-                                isDebug
+                            LogUtils.e(
+                                TAG, "getSupportModes",
+                                "supportedDisplayModes size = ${allDisplayModes.size}", true
                             )
                             allDisplayModes.forEach {
-                                LogUtils.d(TAG, "getSupportModes", "Mode $it", isDebug)
-                                val mode = getDisplayMode(it) ?: return@forEach
-                                list.add(mode.first, mode.second)
-                                LogUtils.d(TAG, "getSupportModes", "Mode is add", isDebug)
+                                val mode = getDisplayMode(it)
+                                if (mode == null) {
+                                    LogUtils.e(TAG, "getSupportModes", "parse mode failed -> $it", true)
+                                } else {
+                                    list.add(mode.first, mode.second)
+                                    LogUtils.d(TAG, "getSupportModes", "Mode is add", isDebug)
+                                }
                             }
                         }
                     }
-                    LogUtils.d(TAG, "getSupportModes", "Final size ${list.size}", isDebug)
+                    LogUtils.e(TAG, "getSupportModes", "Final size ${list.size}", true)
                     list
                 } catch (e: Exception) {
                     LogUtils.e(TAG, "getSupportModes", "$e", true)

@@ -3,7 +3,6 @@ package com.luckyzyx.luckytool.hook.utils
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.view.Display
-import android.view.DisplayAddress
 import android.view.DisplayInfo
 import com.highcapable.kavaref.KavaRef.Companion.asResolver
 import com.highcapable.kavaref.extension.classOf
@@ -29,33 +28,24 @@ class DisplayManagerUtils(val classLoader: ClassLoader?) {
     }
 
     fun getDynamicDisplayInfo(displayInfo: DisplayInfo): Any? {
-        return if (displayInfo.address is DisplayAddress.Physical) {
-            val physicalDisplayId = (displayInfo.address as DisplayAddress.Physical)
-                .physicalDisplayId
-            SurfaceControlUtils(classLoader).let {
-                if (it.isDisplayToken()) {
-                    val token = it.getPhysicalDisplayToken(physicalDisplayId)
-                    it.getDynamicDisplayInfo(token)
-                } else {
-                    it.getDynamicDisplayInfo(physicalDisplayId)
-                }
-            }
-        } else {
-            SurfaceControlUtils(classLoader).let {
-                if (it.isDisplayToken()) {
-                    val token = it.getInternalDisplayToken()
-                    it.getDynamicDisplayInfo(token)
-                } else {
-                    it.getDynamicDisplayInfo(0)
-                }
+        // ColorOS 17 主屏的 address 可能是 StablePhysical,它是 Physical 的兄弟类而非子类,
+        // 因此不能再用 instanceof Physical 判断,直接反射获取 physicalDisplayId。
+        val physicalDisplayId = displayInfo.address?.let { getPhysicalDisplayId(it) } ?: -1L
+        return SurfaceControlUtils(classLoader).let {
+            if (it.isDisplayToken()) {
+                val token = if (physicalDisplayId > 0) it.getPhysicalDisplayToken(physicalDisplayId)
+                else it.getInternalDisplayToken()
+                it.getDynamicDisplayInfo(token)
+            } else {
+                it.getDynamicDisplayInfo(physicalDisplayId)
             }
         }
     }
 
     fun getPhysicalDisplayId(address: Any): Long? {
-        return address.asResolver().firstMethod {
+        return address.asResolver().firstMethodOrNull {
             name = "getPhysicalDisplayId"
             emptyParameters()
-        }.invoke<Long>()
+        }?.invoke<Long>()
     }
 }
