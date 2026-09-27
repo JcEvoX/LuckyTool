@@ -39,6 +39,7 @@ in [TG Channel’s associated groups](https://t.me/LuckyTool)**
 - [适配] 状态栏通知中心时钟显秒 C17
 - [适配] 状态栏电池状态通知 C17
 - [适配] 本地安装Opex补丁 C17
+- [适配] 扫描NFC自动点击 C17
 
 ### 1.3.4
 
