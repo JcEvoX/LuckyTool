@@ -234,7 +234,6 @@
     <string name="fix_control_center_date_display">Correggi la data del centro di controllo</string>
     <string name="fix_control_center_date_display_suammry">Risolvere il problema che la data non può essere visualizzata completamente</string>
     <string name="ControlCenterNotificationCenter">Centro Notifiche del Centro Controllo</string>
-    <string name="enable_notification_align_both_sides">Abilita allineamento notifiche su entrambi i lati</string>
     <string name="remove_notification_cleanup_button">Rimuovi il pulsante di pulizia notifiche</string>
     <string name="enable_notification_importance_classification">Abilita classificazione importanza notifiche</string>
     <string name="custom_notification_background_transparency">Trasparenza sfondo notifica personalizzata</string>

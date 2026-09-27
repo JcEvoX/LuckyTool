@@ -234,7 +234,6 @@
     <string name="fix_control_center_date_display">コントロールセンターの日付表示を修正</string>
     <string name="fix_control_center_date_display_suammry">日付を完全に表示できない問題を修正します</string>
     <string name="ControlCenterNotificationCenter">コントロールセンターの通知センター</string>
-    <string name="enable_notification_align_both_sides">通知の両端揃えを有効化</string>
     <string name="remove_notification_cleanup_button">通知のクリアボタンを削除</string>
     <string name="enable_notification_importance_classification">通知の重要度分類を有効化</string>
     <string name="custom_notification_background_transparency">カスタム通知の背景の透明度</string>

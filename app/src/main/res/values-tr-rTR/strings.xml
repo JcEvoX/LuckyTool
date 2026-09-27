@@ -274,7 +274,6 @@
     <string name="fix_control_center_date_display_suammry">Tarihin tam olarak görüntülenememesi sorununu çözer</string>
     
     <string name="ControlCenterNotificationCenter">Kontrol Merkezi Bildirim Merkezi</string>
-    <string name="enable_notification_align_both_sides">Bildirimlerin her iki tarafa hizalanmasını etkinleştir</string>
     <string name="remove_notification_cleanup_button">Bildirim temizleme butonunu kaldır</string>
     <string name="enable_notification_importance_classification">Bildirim önem sınıflandırmasını etkinleştir</string>
     <string name="custom_notification_background_transparency">Bidirim arkaplanı şeffaflığını özelleştir</string>

@@ -237,7 +237,6 @@
     <string name="fix_control_center_date_display">Sửa lỗi hiển thị ngày của trung tâm điều khiển</string>
     <string name="fix_control_center_date_display_suammry">Sửa lỗi không hiển thị ngày hoàn toàn</string>
     <string name="ControlCenterNotificationCenter">Trung tâm điều khiển Trung tâm thông báo</string>
-    <string name="enable_notification_align_both_sides">Bật thông báo căn chỉnh cả hai bên</string>
     <string name="remove_notification_cleanup_button">Xóa nút dọn dẹp thông báo</string>
     <string name="enable_notification_importance_classification">Bật phân loại mức độ quan trọng của thông báo</string>
     <string name="custom_notification_background_transparency">Độ trong suốt của nền thông báo tùy chỉnh</string>

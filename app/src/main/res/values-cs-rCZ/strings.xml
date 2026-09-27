@@ -235,7 +235,6 @@
     <string name="fix_control_center_date_display">Opravit zobrazení data v ovládacím panelu</string>
     <string name="fix_control_center_date_display_suammry">Opravit problém, kdy datum nemůže být zobrazeno celé</string>
     <string name="ControlCenterNotificationCenter">Oznamovací centrum Ovládacího centra</string>
-    <string name="enable_notification_align_both_sides">Povolit zarovnání notifikací z obou stran</string>
     <string name="remove_notification_cleanup_button">Odstranit tlačítko pro smazání všech notifikací</string>
     <string name="enable_notification_importance_classification">Povolit klasifikaci důležitosti pro notifikace</string>
     <string name="custom_notification_background_transparency">Vlastní průhlednost pozadí panelu notifikací</string>

@@ -261,7 +261,7 @@
     <string name="fix_control_center_date_display_suammry">修复日期无法完整显示的问题</string>
     <string name="remove_control_center_carriers">移除控制中心运营商</string>
     <string name="ControlCenterNotificationCenter">控制中心通知中心</string>
-    <string name="enable_notification_align_both_sides">启用通知两侧对齐</string>
+    <string name="custom__notification_side_spacing_horizontal">自定义通知两侧间距(横屏)</string>
     <string name="remove_notification_cleanup_button">移除通知清理按钮</string>
     <string name="enable_notification_importance_classification">启用通知重要性分类</string>
     <string name="custom_notification_background_transparency">自定义通知背景透明度</string>
@@ -1168,4 +1168,6 @@
     <string name="remove_word_limit_for_compress_files">移除压缩文件字数限制</string>
     <string name="disable_start_app_detail">禁用启动AppDetail</string>
     <string name="remove_multi_app_created_num_limit_for_users">单个应用可以分身的数量</string>
+    <string name="enable_notification_side_spacing">启用通知两侧间距</string>
+    <string name="custom_notification_side_spacing_vertical">自定义通知两侧间距(竖屏)</string>
 </resources>

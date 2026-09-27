@@ -235,7 +235,6 @@
     <string name="fix_control_center_date_display">Виправити відображення дати в центрі керування</string>
     <string name="fix_control_center_date_display_suammry">Вирішити проблему, через яку дата не може відображатися повністю</string>
     <string name="ControlCenterNotificationCenter">Центр повідомлень панелі керування</string>
-    <string name="enable_notification_align_both_sides">Увімкнути вирівнювання повідомлень по обидва боки</string>
     <string name="remove_notification_cleanup_button">Remove notification cleanup button</string>
     <string name="enable_notification_importance_classification">Увімкнути класифікацію важливості сповіщень</string>
     <string name="custom_notification_background_transparency">Custom notification background transparency</string>

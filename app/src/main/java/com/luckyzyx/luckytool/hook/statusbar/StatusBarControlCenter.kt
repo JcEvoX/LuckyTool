@@ -5,7 +5,7 @@ import com.luckyzyx.luckytool.hook.scopes.systemui.ControlCenterBackgroundTransP
 import com.luckyzyx.luckytool.hook.scopes.systemui.ControlCenterClockStyle
 import com.luckyzyx.luckytool.hook.scopes.systemui.ControlCenterDateStyle
 import com.luckyzyx.luckytool.hook.scopes.systemui.EnableControlCenterProgressPercentDisplay
-import com.luckyzyx.luckytool.hook.scopes.systemui.EnableNotificationAlignBothSides
+import com.luckyzyx.luckytool.hook.scopes.systemui.EnableNotificationSideSpacing
 import com.luckyzyx.luckytool.hook.scopes.systemui.NotificationBackgroundBlurAlpha
 import com.luckyzyx.luckytool.hook.scopes.systemui.RemoveControlCenterCarriers
 import com.luckyzyx.luckytool.hook.scopes.systemui.RemoveControlCenterUserSwitcher
@@ -26,9 +26,9 @@ object StatusBarControlCenter : YukiBaseHooker() {
         //控制中心日期样式
         loadHooker(ControlCenterDateStyle)
 
-        //通知两侧对齐
-        if (preferences(ModulePrefs).getBoolean("enable_notification_align_both_sides", false)) {
-            if (osCode >= 23) loadHooker(EnableNotificationAlignBothSides)
+        //自定义通知两侧间距
+        if (preferences(ModulePrefs).getBoolean("enable_notification_side_spacing", false)) {
+            if (osCode >= 23) loadHooker(EnableNotificationSideSpacing)
         }
         //移除控制中心多用户
         if (preferences(ModulePrefs).getBoolean("remove_control_center_user_switcher", false)) {
