@@ -5,6 +5,7 @@ import android.view.View
 import com.highcapable.kavaref.KavaRef.Companion.resolve
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.luckyzyx.luckytool.utils.ModulePrefs
+import com.luckyzyx.luckytool.utils.dp
 import com.luckyzyx.luckytool.utils.getScreenOrientation
 import org.lsposed.lsparanoid.Obfuscate
 
@@ -32,7 +33,7 @@ object EnableNotificationSideSpacing : YukiBaseHooker() {
                         val view = instance<View>()
                         getScreenOrientation(view) {
                             firstField { name = "mSidePaddings" }.of(instance)
-                                .set(if (it) paddingVertical else paddingHorizontal)
+                                .set(if (it) paddingVertical.dp else paddingHorizontal.dp)
                         }
                     }
                 }
