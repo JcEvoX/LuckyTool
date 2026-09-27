@@ -17,45 +17,37 @@ import com.luckyzyx.luckytool.utils.showToast
 import org.lsposed.lsparanoid.Obfuscate
 import org.luckypray.dexkit.DexKitBridge
 import java.io.File
-import java.lang.reflect.Modifier
 
 @Obfuscate
 class EnableOpexLocalInstall(val dexKitBridge: DexKitBridge) : YukiBaseHooker() {
 
-    val packageListInfo = "com.oplus.ota.db.PackageListInfo"
+    companion object {
+        val packageListInfo = "com.oplus.ota.db.PackageListInfo"
 
-    val opexCopyResultCode = "com.oplus.ota.opex.OpexPackageHelper\$OpexCopyResultCode"
+        val opexCopyResultCode = "com.oplus.ota.opex.OpexPackageHelper\$OpexCopyResultCode"
 
-    val OpexMenuItemCode = 10000
+        val OpexMenuItemCode = 10000
+    }
 
     override fun onHook() {
         //OpexPackageHelper
-        //"com.oplus.ota.opex.OpexPackageHelper"
         val opexPackageHelper = dexKitBridge.findClass {
             matcher {
-                addMethod {
-                    paramTypes(String::class.java)
-                    returnType(packageListInfo)
-                paramTypes(classOf<Context>(), packageListInfo.toClass(), classOf<Int>())
-                    returnType(opexCopyResultCode)
+                methods {
+                    add {
+                        paramTypes(classOf<String>())
+                        returnType(packageListInfo)
+                    }
+                    add {
+                        paramCount(3..4)
+                        returnType(opexCopyResultCode)
+                    }
                 }
                 usingStrings("OpexPackageHelper")
             }
         }.apply {
             checkDataList("OpexPackageHelper")
-        }.single().name
-        val helper = opexPackageHelper.toClass()
-        val copyMethod = helper.declaredMethods.singleOrNull { method ->
-            val params = method.parameterTypes
-            Modifier.isStatic(method.modifiers) &&
-                method.returnType.name == opexCopyResultCode &&
-                params.size in 3..4 &&
-                params[0] == Context::class.java &&
-                params[1].name == packageListInfo &&
-                params[2] == Int::class.javaPrimitiveType &&
-                (params.size == 3 || params[3] == Boolean::class.javaPrimitiveType)
-        } ?: error("OpexPackageHelper copy method not found")
-        copyMethod.isAccessible = true
+        }.single().name.toClass()
 
         //Source EntryActivity
         "com.oplus.otaui.activity.EntryActivity".toClass().resolve().apply {
@@ -122,30 +114,35 @@ class EnableOpexLocalInstall(val dexKitBridge: DexKitBridge) : YukiBaseHooker() 
                         if (!opexDir.exists()) opexDir.mkdirs()
 
                         val opexFile = File(opexDir, name)
-                        if (!opexFile.exists()) opexFile.createNewFile()
+                        if (!opexFile.exists()) {
+                            activity.showToast("$name file is not found")
+                            return@before
+                        }
                         FileUtils.copyUriToFile(activity, uri, opexFile)
 
-                        val fileSize = opexDir.listFiles {
+                        val fileList = opexDir.listFiles {
                             it.name.startsWith("ovl_update")
                         } ?: arrayOf()
 
-                        val info = helper.resolve().firstMethod {
+                        val info = opexPackageHelper.resolve().firstMethod {
                             parameters(String::class)
                             returnType = packageListInfo
                         }.invoke(opexDir.path) ?: return@before
 
-                        fileSize.forEachIndexed { index, file ->
+                        fileList.forEachIndexed { index, file ->
                             val name = file.nameWithoutExtension.substringAfterLast("/")
-                            val code = if (copyMethod.parameterCount == 4) {
-                                copyMethod.invoke(null, activity, info, index, false)
-                            } else {
-                                copyMethod.invoke(null, activity, info, index)
-                            }
-                            XLog.debug("$name -> $code")
-                            val code = halper.resolve().firstMethod {
-                                parameters(Context::class, packageListInfo, Int::class)
+                            val copy = opexPackageHelper.resolve().firstMethod {
+                                parameterCount { it in 3..4 }
+                                parameters {
+                                    it[0] == classOf<Context>() && it[1].name == packageListInfo && it[2] == classOf<Int>()
+                                }
                                 returnType = opexCopyResultCode
-                            }.invoke(activity, info, index)
+                            }
+                            val code = if (copy.self.parameterCount == 3) {
+                                copy.invoke(activity, info, index)
+                            } else {
+                                copy.invoke(activity, info, index, false)
+                            }
                             YLog.debug("$name -> $code")
                             activity.showToast("$name -> $code")
                         }
