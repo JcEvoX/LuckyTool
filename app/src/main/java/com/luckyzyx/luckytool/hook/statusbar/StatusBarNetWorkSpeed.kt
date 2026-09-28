@@ -108,15 +108,18 @@ object StatusBarNetWorkSpeed : YukiBaseHooker() {
     @Obfuscate
     object NetWorkSpeedView : YukiBaseHooker() {
         var layoutMode = preferences(ModulePrefs).getString("statusbar_network_layout", "0")
-        var userTypeface = preferences(ModulePrefs).getBoolean("statusbar_network_user_typeface", false)
+        var userTypeface =
+            preferences(ModulePrefs).getBoolean("statusbar_network_user_typeface", false)
         var useBoldFont =
             preferences(ModulePrefs).getBoolean("statusbar_network_use_bold_font_style", false)
         var noSpace = preferences(ModulePrefs).getBoolean("statusbar_network_no_space", false)
         var noSecond = preferences(ModulePrefs).getBoolean("statusbar_network_no_second", false)
         var noUnit = preferences(ModulePrefs).getBoolean("statusbar_network_no_unit", false)
         var getDoubleSize = preferences(ModulePrefs).getInt("set_network_speed_font_size", 7)
-        var getBottomPadding = preferences(ModulePrefs).getInt("set_network_speed_padding_bottom", 0)
-        var setInterval = preferences(ModulePrefs).getInt("set_network_speed_double_row_spacing", -1)
+        var getBottomPadding =
+            preferences(ModulePrefs).getInt("set_network_speed_padding_bottom", 0)
+        var setInterval =
+            preferences(ModulePrefs).getInt("set_network_speed_double_row_spacing", -1)
 
         var bMargin = 0
         var tMargin = 0
@@ -139,6 +142,8 @@ object StatusBarNetWorkSpeed : YukiBaseHooker() {
             ).toClass()
 
             var defaultTypeface: Typeface? = null
+
+            if (layoutMode == "0") return
 
             //Source NetworkSpeedView
             VariousClass(
