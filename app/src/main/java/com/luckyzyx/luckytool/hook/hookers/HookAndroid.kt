@@ -112,7 +112,7 @@ object HookAndroid : YukiBaseHooker() {
         //启用音量键控制手电筒手势
         loadHooker(SystemEnableVolumeKeyControlFlashlight)
 
-        //快捷键拦截（单击/双击/长按/超长按）
+        //快捷键拦截（无操作接管 / 自定义响铃切换）
         if (osCode >= 36) loadHooker(ActionButtonKeyInterceptor)
 
         //强制所有应用支持分屏
