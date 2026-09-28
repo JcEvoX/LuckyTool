@@ -6,6 +6,7 @@ import com.luckyzyx.luckytool.hook.globals.HookGlobalPmsFeature
 import com.luckyzyx.luckytool.hook.globals.HookGlobalSystemConfig
 import com.luckyzyx.luckytool.hook.globals.HookGlobalSystemProperties
 import com.luckyzyx.luckytool.hook.scopes.android.ADBInstallConfirm
+import com.luckyzyx.luckytool.hook.scopes.android.ActionButtonKeyInterceptor
 import com.luckyzyx.luckytool.hook.scopes.android.AllowUntrustedTouch
 import com.luckyzyx.luckytool.hook.scopes.android.AppSplashScreen
 import com.luckyzyx.luckytool.hook.scopes.android.BatteryOptimizationWhitelist
@@ -110,6 +111,9 @@ object HookAndroid : YukiBaseHooker() {
 
         //启用音量键控制手电筒手势
         loadHooker(SystemEnableVolumeKeyControlFlashlight)
+
+        //快捷键拦截（单击/双击/长按/超长按）
+        if (osCode >= 36) loadHooker(ActionButtonKeyInterceptor)
 
         //强制所有应用支持分屏
         if (osCode in 26..33) loadHooker(ForceAllAppsSupportSplitScreen)
