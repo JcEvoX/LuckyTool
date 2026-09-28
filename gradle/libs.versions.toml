@@ -40,7 +40,7 @@ kavaref-core = { group = "com.highcapable.kavaref", name = "kavaref-core", versi
 kavaref-android = { group = "com.highcapable.kavaref", name = "kavaref-android", version.ref = "kavaref" }
 kavaref-extension = { group = "com.highcapable.kavaref", name = "kavaref-extension", version.ref = "kavaref" }
 
-dexkit = { group = "org.luckypray", name = "dexkit", version = "2.2.0" }
+dexkit = { group = "org.luckypray", name = "dexkit", version = "2.3.0" }
 hiddenapibypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapibypass", version = "6.1" }
 
 betterandroid-ui-component = { group = "com.highcapable.betterandroid", name = "ui-component", version.ref = "betterandroid" }
