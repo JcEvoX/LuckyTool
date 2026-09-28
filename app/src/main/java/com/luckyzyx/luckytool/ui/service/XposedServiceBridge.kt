@@ -32,7 +32,12 @@ object XposedServiceBridge {
             override fun onServiceBind(service: XposedService) {
                 xposedService = service
                 bindSignal.countDown()
-                LogUtils.d("LxServiceBridge", "bind service", "API ${service.apiVersion}", true)
+                LogUtils.d(
+                    "Libxposed Service Bridge",
+                    "bind service",
+                    "API ${service.frameworkName} ${service.apiVersion}",
+                    true
+                )
             }
 
             override fun onServiceDied(service: XposedService) {
