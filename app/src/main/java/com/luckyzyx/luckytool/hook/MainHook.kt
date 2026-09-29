@@ -6,6 +6,10 @@ import com.highcapable.yukihookapi.hook.factory.configure
 import com.highcapable.yukihookapi.hook.factory.encase
 import com.highcapable.yukihookapi.hook.xposed.YukiHookXposedModule
 import com.highcapable.yukihookapi.hook.xposed.bridge.event.registerFrameworkEvents
+import com.highcapable.yukihookapi.hook.xposed.bridge.event.v101.onModuleLoaded
+import com.highcapable.yukihookapi.hook.xposed.bridge.event.v101.onPackageLoaded
+import com.highcapable.yukihookapi.hook.xposed.bridge.event.v101.onPackageReady
+import com.highcapable.yukihookapi.hook.xposed.bridge.event.v101.onSystemServerStarting
 import com.luckyzyx.luckytool.hook.hookers.HookAlarmClock
 import com.luckyzyx.luckytool.hook.hookers.HookAndroid
 import com.luckyzyx.luckytool.hook.hookers.HookAudioEffectCenter
@@ -65,8 +69,10 @@ import org.lsposed.lsparanoid.Obfuscate
 import java.io.File
 
 @YukiHookLibXposedEntry(
+    entryClassName = "Entry",
+    minApiVersion = 102,
     targetApiVersion = 102,
-    javaEntries = [XposedMain::class, DisableFlagSecure::class],
+    hotReload = YukiHookLibXposedEntry.HotReload.AUTO,
     scope = [
         "system",
         "com.android.systemui",
@@ -148,10 +154,36 @@ class MainHook : YukiHookXposedModule {
             }
         }
         registerFrameworkEvents {
-            onModuleLoaded { }
+            val corePatch = XposedMain()
+            val disableFlagSecure = DisableFlagSecure()
+            onModuleLoaded {
+                corePatch.onModuleLoaded(it)
+            }
             onPackageLoaded { }
-            onPackageReady { }
-            onSystemServerStarting { }
+            onPackageReady {
+                val prefs = getRemotePreferences("ModulePrefs")
+                val disableFlagEnable = !prefs.getBoolean("disable_flag_secure", false)
+                if (disableFlagEnable) disableFlagSecure.onPackageReady(it)
+            }
+            onSystemServerStarting {
+                val prefs = getRemotePreferences("ModulePrefs")
+                corePatch.onSystemServerStarting(it)
+                val disableFlagEnable = !prefs.getBoolean("disable_flag_secure", false)
+                if (disableFlagEnable) disableFlagSecure.onSystemServerStarting(it)
+            }
+        }
+    }
+
+    companion object {
+        const val TAG = "LuckyTool"
+
+        @SuppressLint("SdCardPath")
+        fun isMasterEnabled(): Boolean {
+            return try {
+                File("/sdcard/disable_lt").exists()
+            } catch (_: Throwable) {
+                true
+            }
         }
     }
 
@@ -315,16 +347,4 @@ class MainHook : YukiHookXposedModule {
         loadApp("com.dv.adm", HookADM)
     }
 
-    companion object {
-        const val TAG = "LuckyTool"
-
-        @SuppressLint("SdCardPath")
-        fun isMasterEnabled(): Boolean {
-            return try {
-                File("/sdcard/disable_lt").exists()
-            } catch (_: Throwable) {
-                true
-            }
-        }
-    }
 }
