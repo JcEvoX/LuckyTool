@@ -157,7 +157,8 @@ class MainHook : YukiHookXposedModule {
             val corePatch = XposedMain()
             val disableFlagSecure = DisableFlagSecure()
             onModuleLoaded {
-                corePatch.onModuleLoaded(it)
+                corePatch.onModuleLoaded(this)
+                disableFlagSecure.onModuleLoaded(this)
             }
             onPackageLoaded { }
             onPackageReady {

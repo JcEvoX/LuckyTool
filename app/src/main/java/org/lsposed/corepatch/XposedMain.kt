@@ -1,7 +1,7 @@
 package org.lsposed.corepatch
 
 import android.os.Build
-import io.github.libxposed.api.XposedModule
+import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModuleInterface
 import org.lsposed.corepatch.Config.printAllConfig
 import org.lsposed.corepatch.hook.ApkSignatureVerifierHook
@@ -22,15 +22,13 @@ import org.lsposed.corepatch.hook.StrictJarVerifierHook
 import org.lsposed.corepatch.hook.VerificationParamsHook
 import org.lsposed.corepatch.hook.VerifyingSessionHook
 
-class XposedMain : XposedModule() {
+class XposedMain {
 
-    override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
-        super.onModuleLoaded(param)
-        XposedHelper.setXposedModule(this)
+    fun onModuleLoaded(base: XposedInterface) {
+        XposedHelper.setXposedModule(base)
     }
 
-    override fun onSystemServerStarting(param: XposedModuleInterface.SystemServerStartingParam) {
-        super.onSystemServerStarting(param)
+    fun onSystemServerStarting(param: XposedModuleInterface.SystemServerStartingParam) {
         XposedHelper.log("onSystemServerStarting: Current sdk version is ${Build.VERSION.SDK_INT}")
 
         XposedHelper.setHostClassLoader(param.classLoader)

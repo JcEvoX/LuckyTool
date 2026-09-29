@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.graphics.Point
 import android.util.Log
 import io.github.libxposed.api.XposedInterface
-import io.github.libxposed.api.XposedModule
 import java.lang.reflect.Executable
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -15,7 +14,7 @@ typealias AfterCallback = (XposedHelper.AfterHookCallback) -> Unit
 object XposedHelper {
     private val TAG = "LuckyTool-CorePatch"
 
-    lateinit var xposedModule: XposedModule
+    lateinit var xposedModule: XposedInterface
         private set
     lateinit var hostClassLoader: ClassLoader
         private set
@@ -23,7 +22,7 @@ object XposedHelper {
     val prefs by lazy { xposedModule.getRemotePreferences("ModulePrefs") }
     private val fieldOffsetValue by lazy { getFieldOffsetOffset() }
 
-    fun setXposedModule(module: XposedModule) {
+    fun setXposedModule(module: XposedInterface) {
         xposedModule = module
     }
 

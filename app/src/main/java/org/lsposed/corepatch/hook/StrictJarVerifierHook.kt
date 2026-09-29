@@ -5,6 +5,7 @@ import org.lsposed.corepatch.Config
 import org.lsposed.corepatch.XposedHelper.hookAfter
 import org.lsposed.corepatch.XposedHelper.hookBefore
 import org.lsposed.corepatch.XposedHelper.hostClassLoader
+import java.security.cert.Certificate
 
 object StrictJarVerifierHook : BaseHook() {
     override val name = "StrictJarVerifierHook"
@@ -72,8 +73,11 @@ object StrictJarVerifierHook : BaseHook() {
                 val signerInfo = getSignerInfosMethod.invoke(block) as Array<*>
                 if (signerInfo.isEmpty()) return@hookAfter
                 val signer = signerInfo[0]
-                val certs = getCertificateChainMethod.invoke(signer, block)
-                callback.result = certs
+                // libcore 的 SignerInfo.getCertificateChain 返回 ArrayList<X509Certificate>（List 而非数组），
+                // 需转换为 Certificate[] 以匹配 verifyBytes 的声明返回类型，否则框架返回值类型校验会抛
+                // ClassCastException: Return value's type from hook callback does not match the hooked method
+                val certs = getCertificateChainMethod.invoke(signer, block) as List<*>
+                callback.result = certs.map { it as Certificate }.toTypedArray()
                 callback.throwable = null
             }
         }

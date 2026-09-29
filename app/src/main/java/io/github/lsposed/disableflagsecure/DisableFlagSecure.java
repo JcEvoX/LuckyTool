@@ -19,10 +19,11 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 
-import io.github.libxposed.api.XposedModule;
+import io.github.libxposed.api.XposedInterface;
+import io.github.libxposed.api.XposedModuleInterface;
 
 @SuppressLint({"PrivateApi", "BlockedPrivateApi"})
-public class DisableFlagSecure extends XposedModule {
+public class DisableFlagSecure {
     private static final String TAG = "LuckyTool-DisableFlagSecure";
     private static final String SYSTEMUI = "com.android.systemui";
     private static final String OPLUS_APPPLATFORM = "com.oplus.appplatform";
@@ -30,35 +31,33 @@ public class DisableFlagSecure extends XposedModule {
     private static final String FLYME_SYSTEMUIEX = "com.flyme.systemuiex";
     private static final String MIUI_SCREENSHOT = "com.miui.screenshot";
     
-    private static XposedModule module;
+    private static XposedInterface module;
     private Pair<String, ClassLoader> param;
     private final Set<String> hookedIds = new HashSet<>();
     
     /**
      * LuckyTool 开关：ModulePrefs.disable_flag_secure（保留旧版开关语义）
      */
-    private boolean isEnabled() {
+    private boolean isEnabled(XposedInterface base) {
         try {
-            return !getRemotePreferences("ModulePrefs").getBoolean("disable_flag_secure", false);
+            return !base.getRemotePreferences("ModulePrefs").getBoolean("disable_flag_secure", false);
         } catch (Throwable t) {
             return true;
         }
     }
     
-    @Override
-    public void onModuleLoaded(@NonNull ModuleLoadedParam param) {
-        module = this;
+    public void onModuleLoaded(XposedInterface base) {
+        module = base;
     }
     
-    @Override
-    public void onSystemServerStarting(@NonNull SystemServerStartingParam param) {
-        if (isEnabled()) return;
+    public void onSystemServerStarting(@NonNull XposedModuleInterface.SystemServerStartingParam param) {
+        if (isEnabled(module)) return;
         var classLoader = param.getClassLoader();
         this.param = Pair.create("system", classLoader);
         try {
             deoptimizeSystemServer(classLoader);
         } catch (Throwable t) {
-            log(Log.ERROR, TAG, "deoptimize system server failed", t);
+            module.log(Log.ERROR, TAG, "deoptimize system server failed", t);
         }
         
         hookSystemServer(classLoader);
@@ -70,7 +69,7 @@ public class DisableFlagSecure extends XposedModule {
             try {
                 hookWindowManagerService(classLoader);
             } catch (Throwable t) {
-                log(Log.ERROR, TAG, "hook WindowManagerService failed", t);
+                module.log(Log.ERROR, TAG, "hook WindowManagerService failed", t);
             }
         }
         
@@ -79,7 +78,7 @@ public class DisableFlagSecure extends XposedModule {
             try {
                 hookActivityTaskManagerService(classLoader);
             } catch (Throwable t) {
-                log(Log.ERROR, TAG, "hook ActivityTaskManagerService failed", t);
+                module.log(Log.ERROR, TAG, "hook ActivityTaskManagerService failed", t);
             }
             
             // Xiaomi HyperOS (U~Baklava)
@@ -88,7 +87,7 @@ public class DisableFlagSecure extends XposedModule {
                 hookHyperOS(classLoader);
             } catch (ClassNotFoundException ignored) {
             } catch (Throwable t) {
-                log(Log.ERROR, TAG, "hook HyperOS failed", t);
+                module.log(Log.ERROR, TAG, "hook HyperOS failed", t);
             }
         }
         
@@ -96,7 +95,7 @@ public class DisableFlagSecure extends XposedModule {
         try {
             hookScreenCapture(classLoader);
         } catch (Throwable t) {
-            log(Log.ERROR, TAG, "hook ScreenCapture failed", t);
+            module.log(Log.ERROR, TAG, "hook ScreenCapture failed", t);
         }
         
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -104,7 +103,7 @@ public class DisableFlagSecure extends XposedModule {
             try {
                 hookActivityManagerService(classLoader);
             } catch (Throwable t) {
-                log(Log.ERROR, TAG, "hook ActivityManagerService failed", t);
+                module.log(Log.ERROR, TAG, "hook ActivityManagerService failed", t);
             }
         }
         
@@ -112,14 +111,14 @@ public class DisableFlagSecure extends XposedModule {
         try {
             hookDisplayControl(classLoader);
         } catch (Throwable t) {
-            log(Log.ERROR, TAG, "hook DisplayControl failed", t);
+            module.log(Log.ERROR, TAG, "hook DisplayControl failed", t);
         }
         
         // VirtualDisplay with MediaProjection (S~Baklava)
         try {
             hookVirtualDisplayAdapter(classLoader);
         } catch (Throwable t) {
-            log(Log.ERROR, TAG, "hook VirtualDisplayAdapter failed", t);
+            module.log(Log.ERROR, TAG, "hook VirtualDisplayAdapter failed", t);
         }
         
         // OneUI
@@ -127,14 +126,14 @@ public class DisableFlagSecure extends XposedModule {
             hookScreenshotHardwareBuffer(classLoader);
         } catch (Throwable t) {
             if (!(t instanceof ClassNotFoundException)) {
-                log(Log.ERROR, TAG, "hook ScreenshotHardwareBuffer failed", t);
+                module.log(Log.ERROR, TAG, "hook ScreenshotHardwareBuffer failed", t);
             }
         }
         try {
             hookOneUI(classLoader);
         } catch (Throwable t) {
             if (!(t instanceof ClassNotFoundException)) {
-                log(Log.ERROR, TAG, "hook OneUI failed", t);
+                module.log(Log.ERROR, TAG, "hook OneUI failed", t);
             }
         }
         
@@ -143,7 +142,7 @@ public class DisableFlagSecure extends XposedModule {
             // Screenshot
             hookWindowState(classLoader);
         } catch (Throwable t) {
-            log(Log.ERROR, TAG, "hook WindowState failed", t);
+            module.log(Log.ERROR, TAG, "hook WindowState failed", t);
         }
         
         // oplus dumpsys
@@ -152,15 +151,14 @@ public class DisableFlagSecure extends XposedModule {
             hookOplus(classLoader);
         } catch (Throwable t) {
             if (!(t instanceof ClassNotFoundException)) {
-                log(Log.ERROR, TAG, "hook Oplus failed", t);
+                module.log(Log.ERROR, TAG, "hook Oplus failed", t);
             }
         }
     }
     
     @SuppressLint("PrivateApi")
-    @Override
-    public void onPackageReady(@NonNull PackageReadyParam param) {
-        if (isEnabled()) return;
+    public void onPackageReady(@NonNull XposedModuleInterface.PackageReadyParam param) {
+        if (isEnabled(module)) return;
         if (!param.isFirstPackage()) return;
         
         var classLoader = param.getClassLoader();
@@ -178,7 +176,7 @@ public class DisableFlagSecure extends XposedModule {
                         hookOplusScreenCapture(classLoader);
                     } catch (Throwable t) {
                         if (!(t instanceof ClassNotFoundException)) {
-                            log(Log.ERROR, TAG, "hook OplusScreenCapture failed", t);
+                            module.log(Log.ERROR, TAG, "hook OplusScreenCapture failed", t);
                         }
                     }
                 }
@@ -190,7 +188,7 @@ public class DisableFlagSecure extends XposedModule {
                     hookScreenshotHardwareBuffer(classLoader);
                 } catch (Throwable t) {
                     if (!(t instanceof ClassNotFoundException)) {
-                        log(Log.ERROR, TAG, "hook ScreenshotHardwareBuffer failed", t);
+                        module.log(Log.ERROR, TAG, "hook ScreenshotHardwareBuffer failed", t);
                     }
                 }
             case SYSTEMUI:
@@ -202,7 +200,7 @@ public class DisableFlagSecure extends XposedModule {
                     try {
                         hookScreenCapture(classLoader);
                     } catch (Throwable t) {
-                        log(Log.ERROR, TAG, "hook ScreenCapture failed", t);
+                        module.log(Log.ERROR, TAG, "hook ScreenCapture failed", t);
                     }
                 }
                 break;
@@ -214,14 +212,12 @@ public class DisableFlagSecure extends XposedModule {
         }
     }
     
-    @Override
-    public boolean onHotReloading(@NonNull HotReloadingParam param) {
+    public boolean onHotReloading(@NonNull XposedModuleInterface.HotReloadingParam param) {
         param.setSavedInstanceState(this.param);
         return true;
     }
     
-    @Override
-    public void onHotReloaded(@NonNull HotReloadedParam param) {
+    public void onHotReloaded(@NonNull XposedModuleInterface.HotReloadedParam param) {
         var isSystemServer = param.isSystemServer();
         if (param.getSavedInstanceState() instanceof Pair<?, ?> pair
                 && pair.first instanceof String packageName
@@ -234,7 +230,7 @@ public class DisableFlagSecure extends XposedModule {
                     hookPackage(packageName, classLoader);
                 }
             } catch (Throwable tr) {
-                log(Log.ERROR, TAG, "Hot reload failed", tr);
+                module.log(Log.ERROR, TAG, "Hot reload failed", tr);
             }
         }
         param.getOldHookHandles().forEach(h -> {
@@ -275,7 +271,7 @@ public class DisableFlagSecure extends XposedModule {
         var list = Arrays.asList(names);
         Arrays.stream(clazz.getDeclaredMethods())
                 .filter(method -> list.contains(method.getName()))
-                .forEach(this::deoptimize);
+                .forEach(module::deoptimize);
     }
     
     private void hookWindowState(ClassLoader classLoader) throws ClassNotFoundException, NoSuchMethodException {
@@ -325,7 +321,7 @@ public class DisableFlagSecure extends XposedModule {
         var captureSecureLayersField = captureArgsClazz.getDeclaredField(Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA &&
                 Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1 ? "mSecureContentPolicy" : "mCaptureSecureLayers");
         captureSecureLayersField.setAccessible(true);
-        Hooker hooker = chain -> {
+        XposedInterface.Hooker hooker = chain -> {
             var captureArgs = chain.getArg(0);
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA &&
@@ -462,17 +458,17 @@ public class DisableFlagSecure extends XposedModule {
         hookMethods(wmScreenshotControllerClazz, chain -> true, "canBeScreenshotTarget");
     }
     
-    private void hookMethods(Class<?> clazz, Hooker hooker, String... names) {
+    private void hookMethods(Class<?> clazz, XposedInterface.Hooker hooker, String... names) {
         var list = Arrays.asList(names);
         Arrays.stream(clazz.getDeclaredMethods())
                 .filter(method -> list.contains(method.getName()))
                 .forEach(method -> hookE(method).intercept(hooker));
     }
     
-    private HookBuilder hookE(Executable executable) {
-        var builder = hook(executable);
+    private XposedInterface.HookBuilder hookE(Executable executable) {
+        var builder = module.hook(executable);
         
-        if (getApiVersion() >= 102) {
+        if (module.getApiVersion() >= 102) {
             var id = executable.toGenericString();
             builder.setId(id);
             hookedIds.add(id);

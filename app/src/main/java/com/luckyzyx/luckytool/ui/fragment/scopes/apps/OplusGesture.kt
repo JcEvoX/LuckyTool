@@ -274,22 +274,25 @@ class OplusGesture : BaseScopePreferenceFeagment() {
                 isIconSpaceReserved = false
                 setOnPreferenceChangeListener { _, newValue ->
                     sendPrefsValue("android", key, newValue)
+                    (activity as MainActivity).restart()
                     true
                 }
             })
-            add(DropDownPreference(this@loadPreferences).apply {
-                title = getString(R.string.action_button_ring_cycle_mode)
-                key = "action_button_ring_cycle_mode"
-                summary = arraySummaryLine(getString(R.string.current_mode) + ": %s")
-                setEntries(R.array.action_button_ring_cycle_mode_entries)
-                entryValues = arrayOf("ring_vibrate_silent", "ring_vibrate", "ring_silent")
-                setDefaultValue("ring_vibrate_silent")
-                isIconSpaceReserved = false
-                setOnPreferenceChangeListener { _, newValue ->
-                    sendPrefsValue("android", key, newValue)
-                    true
-                }
-            })
+            if (getBoolean(ModulePrefs, "action_button_ring_cycle_enable")) {
+                add(DropDownPreference(this@loadPreferences).apply {
+                    title = getString(R.string.action_button_ring_cycle_mode)
+                    key = "action_button_ring_cycle_mode"
+                    summary = arraySummaryLine(getString(R.string.current_mode) + ": %s")
+                    setEntries(R.array.action_button_ring_cycle_mode_entries)
+                    entryValues = arrayOf("ring_vibrate_silent", "ring_vibrate", "ring_silent")
+                    setDefaultValue("ring_vibrate_silent")
+                    isIconSpaceReserved = false
+                    setOnPreferenceChangeListener { _, newValue ->
+                        sendPrefsValue("android", key, newValue)
+                        true
+                    }
+                })
+            }
         }
     }
 
