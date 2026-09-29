@@ -3,14 +3,17 @@ package com.luckyzyx.luckytool.hook.scopes.android
 import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioManager
+import android.media.IAudioService
 import android.os.Handler
 import android.os.Looper
+import android.os.ServiceManager
 import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
+import com.highcapable.kavaref.KavaRef.Companion.asResolver
 import com.highcapable.kavaref.KavaRef.Companion.resolve
 import com.highcapable.kavaref.extension.classOf
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
@@ -37,7 +40,9 @@ import org.lsposed.lsparanoid.Obfuscate
  *  - 原生切换由 gesture 模块 g0（ActionKeyStartApp）收到 782 后执行 setRingerModeInternal，
  *    该接口带 oplusAuthCheck 校验，gesture 侧替换需绕过认证或复刻其 Messenger 通知逻辑
  *  - framework 拦截 782 后 gesture 收不到长按事件，原生切换链路天然被替换，时机与原生一致（495ms），息屏可用
- *  - framework 侧公开 API AudioManager.setRingerMode 无认证问题
+ *  - 切换走 AudioManager internal 路径（反射 hidden API，system_server 进程豁免限制）：
+ *    切静音不联动免打扰；若走公开 setRingerMode（external 路径），ZenModeHelper 会在
+ *    切静音时强制开启 DND（ZEN_MODE_IMPORTANT_INTERRUPTIONS）
  *
  * 扩展方式：新增自定义 mode 时在 takeOverType 的 when 中扩展分支并返回新的接管类型，
  * 再在对应 hook 点按接管类型执行处理逻辑
@@ -100,67 +105,69 @@ object ActionButtonKeyInterceptor : YukiBaseHooker() {
         Log.d(TAG, "快捷键超长按 superLongPress")
     }
 
-    //选项2：自定义响铃切换（超长按计时）
-    private val mRingSuperLongPressRunnable = Runnable {
-        val context = appContext ?: return@Runnable
-        Log.d(TAG, "超长按 superLongPress -> 自定义铃声切换")
-        switchRingMode(context)
-    }
+    //选项2：自定义响铃切换（超长按计时，每次按键创建新实例以捕获 context）
+    private var mRingSuperLongPressRunnable: Runnable? = null
+
+    //配置：初始化读一次快照，运行时由 dataChannel 实时同步（模块 UI 修改后无需重启作用域）
+    private var mNothingEnable = false
+    private var mRingCycleEnable = false
+    private var mRingCycleMode = RING_CYCLE_ALL
 
     override fun onHook() {
+        mNothingEnable = preferences(ModulePrefs).getBoolean("action_button_nothing_enable", false)
+        mRingCycleEnable =
+            preferences(ModulePrefs).getBoolean("action_button_ring_cycle_enable", false)
+        mRingCycleMode =
+            preferences(ModulePrefs).getString("action_button_ring_cycle_mode", RING_CYCLE_ALL)
+
+        dataChannel.wait<Boolean>("action_button_nothing_enable") { mNothingEnable = it }
+        dataChannel.wait<Boolean>("action_button_ring_cycle_enable") { mRingCycleEnable = it }
+        dataChannel.wait<String>("action_button_ring_cycle_mode") { mRingCycleMode = it }
+
         //Source StrategyActionButtonKeyLaunchApp
         "com.android.server.policy.StrategyActionButtonKeyLaunchApp".toClass().resolve().apply {
             //选项1：无操作接管，拦截 780 物理按键事件
-            firstMethod { name = "actionInterceptKeyBeforeQueueing" }.hook {
-                before {
-                    val instance = firstMethod { name = "getInstance" }.invoke() ?: return@before
-                    val context = firstField { type = Context::class; superclass() }
-                        .of(instance).get<Context>() ?: return@before
-                    val event = arg(0).get<KeyEvent>() ?: return@before
-                    val keyCode = arg(2).get<Int>() ?: return@before
-                    val down = arg(3).get<Boolean>() ?: return@before
-                    if (keyCode != KEYCODE_ACTION_BUTTON || event.repeatCount != 0) return@before
-
-                    //接管条件：无操作接管开关开启（分发见 takeOverType）
-                    if (takeOverType(context) != TAKE_OVER_NOTHING) return@before
-
-                    //判定与日志统一在 handler 线程执行，跳过原方法（原方法同样吞掉 780）
-                    mHandler.post { handleNothingEvent(down, SystemClock.uptimeMillis()) }
-                    result = 0
+            firstMethod { name = "actionInterceptKeyBeforeQueueing" }.intercept {
+                //取参失败一律放行官方代码（返回 0 会吞掉按键事件，导致按键失灵）
+                val instance =
+                    firstMethod { name = "getInstance" }.invoke() ?: return@intercept proceed()
+                val context =
+                    firstField { type = Context::class; superclass() }.of(instance).get<Context>()
+                        ?: return@intercept proceed()
+                val event = arg<KeyEvent>(0) ?: return@intercept proceed()
+                val keyCode = arg<Int>(2) ?: return@intercept proceed()
+                val down = arg<Boolean>(3) ?: return@intercept proceed()
+                if (keyCode != KEYCODE_ACTION_BUTTON || event.repeatCount != 0) {
+                    return@intercept proceed()
                 }
+
+                //接管条件：无操作接管开关开启（分发见 takeOverType）
+                if (takeOverType(context) != TAKE_OVER_NOTHING) return@intercept proceed()
+
+                //接管：判定与日志统一在 handler 线程执行，拦截并返回 0（原方法同样吞掉 780）
+                mHandler.post { handleNothingEvent(down, SystemClock.uptimeMillis()) }
+                0
             }
 
             //选项2：自定义响铃切换，拦截原生注入的 782 长按事件（静态方法）
-            firstMethod { name = "injectActionButtonPressKeyEvent" }.hook {
-                before {
-                    val instance = firstMethod { name = "getInstance" }.invoke() ?: return@before
-                    val context = firstField { type = Context::class; superclass() }
-                        .of(instance).get<Context>() ?: return@before
-                    val event = firstArg().get<KeyEvent>() ?: return@before
-                    if (event.keyCode != KEYCODE_ACTION_BUTTON_LONG_PRESS) return@before
+            firstMethod { name = "injectActionButtonPressKeyEvent" }.intercept {
+                val instance =
+                    firstMethod { name = "getInstance" }.invoke() ?: return@intercept proceed()
+                val context =
+                    firstField { type = Context::class; superclass() }.of(instance).get<Context>()
+                        ?: return@intercept proceed()
+                val event = firstArg<KeyEvent>() ?: return@intercept proceed()
+                if (event.keyCode != KEYCODE_ACTION_BUTTON_LONG_PRESS) return@intercept proceed()
 
-                    //接管条件：自定义响铃切换开关开启（分发见 takeOverType）
-                    if (takeOverType(context) != TAKE_OVER_RING_MODE) return@before
+                //接管条件：自定义响铃切换开关开启（分发见 takeOverType）
+                if (takeOverType(context) != TAKE_OVER_RING_MODE) return@intercept proceed()
 
-                    //拦截 782，动作统一在 handler 线程执行
-                    mHandler.post { handleRingInject(event.action, context) }
-                    result = null
-                }
+                //拦截 782：不调用 proceed 即跳过原生注入，动作统一在 handler 线程执行
+                mHandler.post { handleRingInject(event.action, context) }
+                null
             }
         }
     }
-
-    //TODO UI：设置页添加"无操作接管"开关，绑定 action_button_nothing_enable
-    private fun isNothingEnable(): Boolean = preferences(ModulePrefs)
-        .getBoolean("action_button_nothing_enable", true)
-
-    //TODO UI：设置页添加"自定义响铃切换模式"开关，绑定 action_button_ring_cycle_enable
-    private fun isRingCycleEnable(): Boolean = preferences(ModulePrefs)
-        .getBoolean("action_button_ring_cycle_enable", true)
-
-    //TODO UI：设置页添加循环模式选择（响铃振动 / 响铃静音 / 响铃振动静音），绑定 action_button_ring_cycle_mode
-    private fun getRingCycleMode(): String = preferences(ModulePrefs)
-        .getString("action_button_ring_cycle_mode", RING_CYCLE_RING_SILENT)
 
     /**
      * 读取当前系统快捷键功能，when 分发返回接管类型
@@ -172,14 +179,15 @@ object ActionButtonKeyInterceptor : YukiBaseHooker() {
             null
         }
         return when (switchState) {
-            ACTION_SWITCH_NOTHING -> if (isNothingEnable()) TAKE_OVER_NOTHING else TAKE_OVER_NONE
-            ACTION_SWITCH_RING_MODE -> if (isRingCycleEnable()) TAKE_OVER_RING_MODE else TAKE_OVER_NONE
+            ACTION_SWITCH_NOTHING -> if (mNothingEnable) TAKE_OVER_NOTHING else TAKE_OVER_NONE
+            ACTION_SWITCH_RING_MODE -> if (mRingCycleEnable) TAKE_OVER_RING_MODE else TAKE_OVER_NONE
 
             else -> TAKE_OVER_NONE
         }
     }
 
     //选项1：无操作接管，四类事件判定与日志
+    @SuppressLint("ReplaceWithCoroutinesExtension")
     private fun handleNothingEvent(down: Boolean, now: Long) {
         if (down) {
             //处于双击等待窗口内的第二次按下
@@ -223,31 +231,38 @@ object ActionButtonKeyInterceptor : YukiBaseHooker() {
     }
 
     //选项2：自定义响铃切换，拦截 782 长按注入
+    @SuppressLint("ReplaceWithCoroutinesExtension")
     private fun handleRingInject(action: Int, context: Context) {
         when (action) {
             KeyEvent.ACTION_DOWN -> {
                 //长按成立点（物理按下约 495ms）：执行自定义切换
-                Log.d(TAG, "长按 longPress -> 自定义铃声切换")
                 switchRingMode(context)
                 //继续按住不松到物理 3000ms 则视为超长按，再切换一次
-                mHandler.removeCallbacks(mRingSuperLongPressRunnable)
-                mHandler.postDelayed(mRingSuperLongPressRunnable, SUPER_LONG_PRESS_LEFT)
+                mRingSuperLongPressRunnable?.let { mHandler.removeCallbacks(it) }
+                val pending = Runnable {
+                    switchRingMode(context)
+                }
+                mRingSuperLongPressRunnable = pending
+                mHandler.postDelayed(pending, SUPER_LONG_PRESS_LEFT)
             }
 
             KeyEvent.ACTION_UP -> {
                 //已松开，取消超长按计时
-                mHandler.removeCallbacks(mRingSuperLongPressRunnable)
+                mRingSuperLongPressRunnable?.let { mHandler.removeCallbacks(it) }
+                mRingSuperLongPressRunnable = null
             }
         }
     }
 
     private fun switchRingMode(context: Context) {
-        val cycle = when (getRingCycleMode()) {
-            RING_CYCLE_RING_VIBRATE ->
-                intArrayOf(AudioManager.RINGER_MODE_NORMAL, AudioManager.RINGER_MODE_VIBRATE)
+        val cycle = when (mRingCycleMode) {
+            RING_CYCLE_RING_VIBRATE -> intArrayOf(
+                AudioManager.RINGER_MODE_NORMAL, AudioManager.RINGER_MODE_VIBRATE
+            )
 
-            RING_CYCLE_RING_SILENT ->
-                intArrayOf(AudioManager.RINGER_MODE_NORMAL, AudioManager.RINGER_MODE_SILENT)
+            RING_CYCLE_RING_SILENT -> intArrayOf(
+                AudioManager.RINGER_MODE_NORMAL, AudioManager.RINGER_MODE_SILENT
+            )
 
             else -> intArrayOf(
                 AudioManager.RINGER_MODE_NORMAL,
@@ -256,25 +271,102 @@ object ActionButtonKeyInterceptor : YukiBaseHooker() {
             )
         }
         val audioManager = context.getSystemService(classOf<AudioManager>()) ?: return
-        val current = audioManager.ringerMode
+        val current = getRingerModeInternal(audioManager)
+        if (current == null) {
+            Log.d(TAG, "铃声模式获取失败")
+            return
+        }
         val next = cycle.indexOf(current).let { index ->
             if (index < 0) cycle[0] else cycle[(index + 1) % cycle.size]
         }
         try {
-            audioManager.setRingerMode(next)
+            //internal 路径：与原生快捷键行为一致，切静音不联动免打扰
+            //（external 路径即公开 setRingerMode 切静音时 ZenModeHelper 会强制开启 DND）
+            setRingerModeInternal(audioManager, next)
             Log.d(TAG, "铃声模式切换 $current -> $next")
-            vibrateFeedback(context)
+            vibrateFeedback(context, next)
         } catch (e: Throwable) {
             Log.e(TAG, "铃声模式切换失败", e)
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private fun vibrateFeedback(context: Context) {
+    private fun getRingerModeInternal(audioManager: AudioManager): Int? {
+        return try {
+            audioManager.asResolver().firstMethod {
+                name = "getRingerModeInternal"
+                emptyParameters()
+            }.invoke<Int>()
+        } catch (_: Throwable) {
+            audioManager.ringerMode  //反射失败兜底
+        }
+    }
+
+    private fun setRingerModeInternal(audioManager: AudioManager, ringerMode: Int) {
+        //直接走 binder 并伪造 caller = com.android.systemui，命中 AudioService mMuteWhenSilenceCaller 白名单：
+        //切静音时 muteSpeakerMediaByActionButton(true) 静音媒体音量，切回响铃恢复，与 Tile 行为一致
+        //（走 AudioManager 时 caller 为本进程 "android"，不在白名单，媒体联动被跳过）
         try {
-            (context.getSystemService(classOf<Vibrator>()))?.vibrate(
-                VibrationEffect.createOneShot(60L, 128)
-            )
+            val binder = ServiceManager.getService("audio")
+            val ias = IAudioService.Stub.asInterface(binder)
+            ias.setRingerModeInternal(ringerMode, "com.android.systemui")
+        } catch (_: Throwable) {
+            //兜底：退回 AudioManager 路径（媒体联动缺失但不影响铃声切换）
+            audioManager.asResolver().firstMethod {
+                name = "setRingerModeInternal"
+                parameters(classOf<Int>())
+            }.invoke(ringerMode)
+        }
+    }
+
+    /**
+     * 振动反馈，对齐官方语义（OplusRMChangeVibrateHelper.vibrateOnRMChanged）：
+     * 切到响铃 -> 308（EFFECT_ALERTSLIDER_DOWN）、切到振动 -> 430（EFFECT_ID_THREE_STAGE_KEY）、
+     * 切到静音 -> 不振动
+     * 优先走 LinearmotorVibrator（getSystemService("linearmotor")，与 SystemUI OplusVibrateHelper 同源），
+     * 失败退回普通 Vibrator 时长振幅近似
+     */
+    @SuppressLint("MissingPermission")
+    private fun vibrateFeedback(context: Context, ringerMode: Int) {
+        val effectId = when (ringerMode) {
+            AudioManager.RINGER_MODE_NORMAL -> 308
+            AudioManager.RINGER_MODE_VIBRATE -> 430
+            else -> return  //RINGER_MODE_SILENT：官方不振动
+        }
+        try {
+            val linearMotor = context.getSystemService("linearmotor")
+                ?: return fallbackVibrate(context, effectId)
+            val builderCls = "com.oplus.os.WaveformEffect\$Builder".toClass()
+            val builder = builderCls.asResolver().firstConstructor { emptyParameters() }.create()
+            builder.asResolver().firstMethod {
+                name = "setEffectType"
+                parameters(classOf<Int>())
+            }.invoke(effectId)
+            builder.asResolver().firstMethod {
+                name = "setAsynchronous"
+                parameters(classOf<Boolean>())
+            }.invoke(true)
+            val effect = builder.asResolver().firstMethod {
+                name = "build"
+                emptyParameters()
+            }.invoke<Any>() ?: return fallbackVibrate(context, effectId)
+            linearMotor.asResolver().firstMethod {
+                name = "vibrate"
+                parameters("com.oplus.os.WaveformEffect".toClass())
+            }.invoke(effect)
+            Log.d(TAG, "线性马达振动 effectId=$effectId")
+        } catch (_: Throwable) {
+            fallbackVibrate(context, effectId)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun fallbackVibrate(context: Context, effectId: Int) {
+        try {
+            val vibrator = context.getSystemService(classOf<Vibrator>()) ?: return
+            when (effectId) {
+                308 -> vibrator.vibrate(VibrationEffect.createOneShot(80L, 160))
+                430 -> vibrator.vibrate(VibrationEffect.createOneShot(40L, 96))
+            }
         } catch (_: Throwable) {
         }
     }

@@ -872,6 +872,10 @@
     <string name="replace_side_slider_icon_on_left">替换左侧侧滑图标</string>
     <string name="replace_side_slider_icon_on_right">替换右侧侧滑图标</string>
     <!--OplusMMS-->
+    <string name="CustomActionButton">自定义快捷键</string>
+    <string name="action_button_nothing_enable">替换无操作事件</string>
+    <string name="action_button_ring_cycle_enable">替换响铃循环事件</string>
+    <string name="action_button_ring_cycle_mode">设置响铃循环模式</string>
     <string name="remove_verification_code_floating_window">移除验证码悬浮窗</string>
     <!--OplusPhone-->
     <string name="remove_mms_bottom_input_box_menu">移除短信底部输入框菜单</string>

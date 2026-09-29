@@ -413,5 +413,11 @@
         <item>IN</item>
         <item>US</item>
     </string-array>
+    
+    <string-array name="action_button_ring_cycle_mode_entries">
+        <item>响铃 振动 静音</item>
+        <item>响铃 振动</item>
+        <item>响铃 静音</item>
+    </string-array>
 
 </resources>
