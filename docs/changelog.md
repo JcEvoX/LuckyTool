@@ -44,6 +44,7 @@ in [TG Channel’s associated groups](https://t.me/LuckyTool)**
 - [添加] 自定义通知两侧间距 C12+
 - [适配] 适配5G开关磁贴 C17
 - [适配] 强制刷新率数据 C17
+- [适配] WIFI地址信息显示网关 C17
 
 ### 1.3.4
 
