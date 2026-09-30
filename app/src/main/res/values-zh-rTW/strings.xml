@@ -573,6 +573,8 @@
     <string name="allow_disabling_system_apps_summary">由于用户操作导致无法恢复系统应用，本模块概不负责!</string>
     <string name="remove_app_uninstall_button_blacklist">移除应用卸载按钮黑名单</string>
     <string name="enable_custom_app_language">启用自定义应用语言</string>
+    <string name="disable_app_archiving">自動釋放應用空間預設關閉</string>
+    <string name="disable_app_archiving_summary">空間不足時不再自動解除安裝應用（解除安裝但保留資料），預設對所有應用關閉</string>
     <!--FloatingWindowDialogRelated-->
     <string name="FloatingWindowDialogRelated">悬浮窗/对话框相关</string>
     <string name="disable_duplicate_floating_window">禁用复制悬浮窗</string>

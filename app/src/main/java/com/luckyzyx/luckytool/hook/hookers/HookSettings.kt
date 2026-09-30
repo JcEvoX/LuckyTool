@@ -11,6 +11,7 @@ import com.luckyzyx.luckytool.hook.scopes.settings.CustomProcessorPageIntroducti
 import com.luckyzyx.luckytool.hook.scopes.settings.CustomizeDeviceOTACardBackground
 import com.luckyzyx.luckytool.hook.scopes.settings.CustomizeDeviceSharingPageParameters
 import com.luckyzyx.luckytool.hook.scopes.settings.DarkModeList
+import com.luckyzyx.luckytool.hook.scopes.settings.DisableAppArchivingUI
 import com.luckyzyx.luckytool.hook.scopes.settings.DisableSettingOtgAutoOff
 import com.luckyzyx.luckytool.hook.scopes.settings.EnableCustomAppLanguage
 import com.luckyzyx.luckytool.hook.scopes.settings.EnableGoogleAutoFill
@@ -104,7 +105,11 @@ object HookSettings : YukiBaseHooker() {
             if (osCode < 40) loadHooker(EnableStatusBarClockFormat)
         }
         //自定义设备分享页面参数
-        if (preferences(ModulePrefs).getBoolean("customize_device_sharing_page_parameters", false)) {
+        if (preferences(ModulePrefs).getBoolean(
+                "customize_device_sharing_page_parameters",
+                false
+            )
+        ) {
             if (SDK >= A13) loadHooker(CustomizeDeviceSharingPageParameters)
         }
         //强制开启进程管理
@@ -128,7 +133,11 @@ object HookSettings : YukiBaseHooker() {
             if (SDK >= A14) loadHooker(EnableCustomAppLanguage)
         }
         //强制显示密码管理设置项
-        if (preferences(ModulePrefs).getBoolean("force_display_password_management_settings", false)) {
+        if (preferences(ModulePrefs).getBoolean(
+                "force_display_password_management_settings",
+                false
+            )
+        ) {
             loadHooker(ForceDisplayPasswordManagementSettings)
         }
         //自定义设备OTA卡片背景
@@ -144,7 +153,10 @@ object HookSettings : YukiBaseHooker() {
             if (preferences(ModulePrefs).getBoolean("fix_default_app_jump_problem", false)) {
                 loadHooker(FixDefaultAppJumpProblem)
             }
-            if (preferences(ModulePrefs).getBoolean("force_display_auto_launch_jump_option", false)) {
+            if (preferences(ModulePrefs).getBoolean(
+                    "force_display_auto_launch_jump_option", false
+                )
+            ) {
                 loadHooker(ForceDisplayAutoLaunchJumpOption)
             }
         }
@@ -164,6 +176,9 @@ object HookSettings : YukiBaseHooker() {
         if (preferences(ModulePrefs).getBoolean("auto_jump_accessibility_settings", false)) {
             loadHooker(AutoJumpAccessibilitySettings)
         }
+
+        //《自动释放应用空间》默认关闭 - 开关 UI 显示
+        if (osCode >= 36) loadHooker(DisableAppArchivingUI)
 
         //电源键
 //        //Source PowerButtonPreferenceController

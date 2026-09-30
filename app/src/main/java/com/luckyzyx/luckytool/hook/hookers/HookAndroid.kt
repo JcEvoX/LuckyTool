@@ -12,6 +12,7 @@ import com.luckyzyx.luckytool.hook.scopes.android.AppSplashScreen
 import com.luckyzyx.luckytool.hook.scopes.android.BatteryOptimizationWhitelist
 import com.luckyzyx.luckytool.hook.scopes.android.DarkModeService
 import com.luckyzyx.luckytool.hook.scopes.android.DisableAccessibilityWarningDialog
+import com.luckyzyx.luckytool.hook.scopes.android.DisableAppArchiving
 import com.luckyzyx.luckytool.hook.scopes.android.DisableAudioFocus
 import com.luckyzyx.luckytool.hook.scopes.android.DisableMaliciousAppIntercept
 import com.luckyzyx.luckytool.hook.scopes.android.EnableKeepNotificationWhenAppStop
@@ -114,6 +115,9 @@ object HookAndroid : YukiBaseHooker() {
 
         //快捷键拦截（无操作接管 / 自定义响铃切换）
         if (osCode >= 36) loadHooker(ActionButtonKeyInterceptor)
+
+        //全局关闭应用自动归档（空间不足自动卸载应用）
+        if (osCode >= 36) loadHooker(DisableAppArchiving)
 
         //强制所有应用支持分屏
         if (osCode in 26..33) loadHooker(ForceAllAppsSupportSplitScreen)

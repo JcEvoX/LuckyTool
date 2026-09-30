@@ -652,7 +652,9 @@
     <string name="allow_disabling_system_apps_summary">This module is not responsible if the system application cannot be restored due to user operations.</string>
     <string name="remove_app_uninstall_button_blacklist">Remove blacklist of app uninstall button</string>
     <string name="enable_custom_app_language">Enable custom app language</string>
-    
+    <string name="disable_app_archiving">Auto release app space off by default</string>
+    <string name="disable_app_archiving_summary">All apps are opted out of auto-archiving (uninstall app but keep data when storage is low) by default</string>
+
     <!--FloatingWindowDialogRelated-->
     <string name="FloatingWindowDialogRelated">Floating Window / Dialog Related</string>
     <string name="disable_duplicate_floating_window">Disable Duplicate Window</string>
