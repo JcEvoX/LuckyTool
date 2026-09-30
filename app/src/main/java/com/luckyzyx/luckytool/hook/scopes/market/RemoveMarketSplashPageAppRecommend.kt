@@ -27,28 +27,28 @@ class RemoveMarketSplashPageAppRecommend(val dexKitBridge: DexKitBridge) : YukiB
             dexKitBridge.findClass {
                 matcher {
                     fields {
-                    addForType(classOf<Int>())
+                        addForType(classOf<Int>())
                         addForType(classOf<Long>())
                         addForType(classOf<Boolean>())
                         addForType(classOf<AtomicBoolean>())
                     }
                     methods {
-                    add { paramTypes(classOf<String>()); returnType(classOf<Boolean>()) }
+                        add { paramTypes(classOf<String>()); returnType(classOf<Boolean>()) }
                         add { paramTypes(classOf<Boolean>()); returnType(splashDto) }
                         add {
-                        paramTypes(classOf<Boolean>().name, classOf<Int>().name, splashDto)
+                            paramTypes(classOf<Boolean>().name, classOf<Int>().name, splashDto)
                             returnType(Void.TYPE)
                         }
                         add { paramTypes(splashDto, classOf<Boolean>().name, mediaDto) }
                         add { paramTypes(splashDto, classOf<Boolean>().name, imageDto) }
                     }
-                    usingStrings("getSplashData")
+                    usingStrings("getSplashData", "isRequestByNet")
                 }
             }.apply {
                 checkDataList("RemoveMarketSplashPageAppRecommend")
                 single().name.toClass().resolve().apply {
                     firstMethod {
-                    parameters(classOf<Boolean>())
+                        parameters(classOf<Boolean>())
                         returnType(splashDto)
                     }.hook {
                         intercept()
@@ -69,16 +69,16 @@ class RemoveMarketSplashPageAppRecommend(val dexKitBridge: DexKitBridge) : YukiB
             dexKitBridge.findClass {
                 matcher {
                     fields {
-                    addForType(classOf<Int>())
+                        addForType(classOf<Int>())
                         addForType(classOf<Long>())
                         addForType(classOf<Boolean>())
                         addForType(classOf<AtomicBoolean>())
                     }
                     methods {
-                    add { paramTypes(classOf<String>()); returnType(classOf<Boolean>()) }
+                        add { paramTypes(classOf<String>()); returnType(classOf<Boolean>()) }
                         add { paramTypes(classOf<Boolean>()); returnType(splashDto) }
                         add {
-                        paramTypes(classOf<Boolean>().name, classOf<Int>().name, splashDto)
+                            paramTypes(classOf<Boolean>().name, classOf<Int>().name, splashDto)
                             returnType(Void.TYPE)
                         }
                         add { paramTypes(splashDto, classOf<Boolean>().name, mediaDto) }
