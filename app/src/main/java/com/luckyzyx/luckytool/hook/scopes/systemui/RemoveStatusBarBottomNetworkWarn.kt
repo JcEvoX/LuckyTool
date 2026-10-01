@@ -22,7 +22,7 @@ object RemoveStatusBarBottomNetworkWarn : YukiBaseHooker() {
             dataChannel.wait<String>("remove_control_center_networkwarn") { removeMode = it }
 
             //Source OplusQSSecurityController
-            "com.oplus.systemui.qs.policy.OplusQSSecurityController".toClass().resolve().optional(true).apply {
+            "com.oplus.systemui.qs.policy.OplusQSSecurityController".toClass().resolve().apply {
                 firstMethod { name = "showDeviceMonitoringDialog" }.hook {
                     if (removeMode == "1" || removeMode == "2") intercept()
                 }
@@ -44,7 +44,7 @@ object RemoveStatusBarBottomNetworkWarn : YukiBaseHooker() {
             VariousClass(
                 "com.oplusos.systemui.qs.widget.OplusQSSecurityText", //C13
                 "com.oplus.systemui.qs.widget.OplusQSSecurityText" //C14
-            ).toClass().resolve().optional(true).apply {
+            ).toClass().resolve().apply {
                 firstMethod { name = "handleClick" }.hook {
                     if (removeMode == "1" || removeMode == "2") intercept()
                 }

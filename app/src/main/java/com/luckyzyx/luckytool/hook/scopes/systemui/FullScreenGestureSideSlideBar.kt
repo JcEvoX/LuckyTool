@@ -27,7 +27,7 @@ object FullScreenGestureSideSlideBar : YukiBaseHooker() {
             "com.oplusos.systemui.navigationbar.gesture.sidegesture.SideGestureNavView",
             "com.oplus.systemui.navigationbar.gesture.sidegesture.SideGestureNavView", //C14 C15
             "com.oplus.systemui.navigationbar.gesture.sidegesture.view.SideGestureNavView" //C16
-        ).toClass().resolve().optional(true).apply {
+        ).toClass().resolve().apply {
             firstMethod { name = "onDraw";parameterCount = 1 }.hook {
                 if (removeView) intercept()
             }

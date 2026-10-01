@@ -143,7 +143,7 @@ object MobileDataIconRelated : YukiBaseHooker() {
 
             //Source OplusStatusBarSignalPolicy
             "com.oplus.systemui.statusbar.phone.signal.OplusStatusBarSignalPolicy".toClass()
-                .resolve().optional(true).apply {
+                .resolve().apply {
                     (firstMethodOrNull {
                         name = "updateSlotIconVisibility"
                         parameterCount { it in 3..4 }

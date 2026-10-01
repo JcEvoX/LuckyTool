@@ -19,7 +19,7 @@ object DisableHighVolumeWarningNotifications : YukiBaseHooker() {
         VariousClass(
             "com.oplusos.systemui.notification.power.OplusPowerUI", //C12 C13
             "com.oplus.systemui.statusbar.notification.power.OplusPowerUI" //C14 C15
-        ).toClass().resolve().optional(true).apply {
+        ).toClass().resolve().apply {
             firstMethod { name = "start" }.hook {
                 after {
                     val context = (firstFieldOrNull { type = Context::class }

@@ -15,9 +15,8 @@ object RemoveFlashlightOpenNotification : YukiBaseHooker() {
             "com.oplus.systemui.notification.flashlight.FlashlightNotification" //C15.0.1
         ).toClass().resolve().apply {
             firstMethod {
-                // ColorOS 17 的 R8 将 boolean 入口重命名，保留旧系统入口。
-                name { it == "sendNotification" || it == "sendNotification\$1" }
-                parameters(Boolean::class)
+                name { it.startsWith("sendNotification") }
+                parameterCount = 1
             }.hook {
                 intercept()
             }

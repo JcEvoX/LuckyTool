@@ -79,23 +79,23 @@ object LockScreenChargingComponent : YukiBaseHooker() {
             }
 
             val ChargeUtilCLazz = ChargeUtil.toClass()
-            val hasShowWattage = ChargeUtilCLazz.resolve().optional(true).firstMethodOrNull {
+            val hasShowWattage = ChargeUtilCLazz.resolve().firstMethodOrNull {
                 name = "getShowWattage"
             } != null
-            val hasTechnologyStrForFrameCharge = ChargeUtilCLazz.resolve().optional(true).firstMethodOrNull {
+            val hasTechnologyStrForFrameCharge = ChargeUtilCLazz.resolve().firstMethodOrNull {
                 name = "getTechnologyStrForFrameCharge"
             } != null
-            val hasShowWattageForFrameCharge = ChargeUtilCLazz.resolve().optional(true).firstMethodOrNull {
+            val hasShowWattageForFrameCharge = ChargeUtilCLazz.resolve().firstMethodOrNull {
                 name = "getShowWattageForFrameCharge"
             } != null
 
             val ChargeLevelAndLogoView = ChargeLevelAndLogoView.toClass()
-            val hasUpdateChargeTechImage = ChargeLevelAndLogoView.resolve().optional(true).firstMethodOrNull {
+            val hasUpdateChargeTechImage = ChargeLevelAndLogoView.resolve().firstMethodOrNull {
                 name = "updateChargeTechImage"
             } != null
 
             //Source ChargingLevelAndLogoView
-            ChargeLevelAndLogoView.resolve().optional(true).apply {
+            ChargeLevelAndLogoView.resolve().apply {
                 firstMethod { name = "showCNChargeTechLogo" }.hook {
                     before {
                         result = when (textLogo) {
@@ -199,7 +199,7 @@ object LockScreenChargingComponent : YukiBaseHooker() {
             }
 
             //Source FrameChargeLevelAndLogoView
-            FrameChargeLevelAndLogoView.toClass().resolve().optional(true).apply {
+            FrameChargeLevelAndLogoView.toClass().resolve().apply {
                 firstMethodOrNull { name = "shouldShowTextLogo" }?.hook {
                     before {
                         result = when (textLogo) {
@@ -273,7 +273,7 @@ object LockScreenChargingComponent : YukiBaseHooker() {
             }
 
             //Source OplusChargeAnimImpl -> ChargeUtil
-            ChargeUtilCLazz.resolve().optional(true).apply {
+            ChargeUtilCLazz.resolve().apply {
                 firstMethod {
 //                    name = "getChargeLevelTypeFace"
 //                    name = "getSansTypeFace"
