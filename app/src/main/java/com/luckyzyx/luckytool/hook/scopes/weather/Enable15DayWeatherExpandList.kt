@@ -22,11 +22,6 @@ object Enable15DayWeatherExpandList : YukiBaseHooker() {
 
         //Source UIConfigManager
         "com.oplus.weather.uiconfig.UIConfigManager".toClass().resolve().apply {
-            optional(true).method {
-                name { it.startsWith("get") && it.contains("Day15ExpandConfig") }
-            }.ifEmpty {
-                return@apply
-            }
             method {
                 name { it.startsWith("get") && it.contains("Day15ExpandConfig") }
             }.hookAll {
