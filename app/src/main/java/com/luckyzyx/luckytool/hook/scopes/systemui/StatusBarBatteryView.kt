@@ -24,7 +24,8 @@ object StatusBarBatteryView : YukiBaseHooker() {
         override fun onHook() {
             val removePercent =
                 preferences(ModulePrefs).getBoolean("remove_statusbar_battery_percent", false)
-            val userTypeface = preferences(ModulePrefs).getBoolean("statusbar_power_user_typeface", false)
+            val userTypeface =
+                preferences(ModulePrefs).getBoolean("statusbar_power_user_typeface", false)
             val useBoldFont =
                 preferences(ModulePrefs).getBoolean("statusbar_power_use_bold_font_style", false)
             val customFontSize = preferences(ModulePrefs).getInt("statusbar_power_font_size", 0)
@@ -34,49 +35,20 @@ object StatusBarBatteryView : YukiBaseHooker() {
             //Source BatteryViewBinder
             "com.oplus.systemui.statusbar.pipeline.battery.ui.binder.BatteryViewBinder".toClass()
                 .resolve().apply {
-                    firstMethodOrNull { name = "bind\$initView" }?.hook {
-                        after {
-                            args.filterIsInstance<TextView>().forEachIndexed { _, view ->
-                                view.handBatteryTextView(
-                                    removePercent,
-                                    userTypeface,
-                                    useBoldFont,
-                                    customFontSize,
-                                    applyToIcon
-                                )
-                            }
-                        }
-                    }
-                    firstMethodOrNull { name = "updateText" }?.hook {
-                        after {
-                            val view = firstArg().get<TextView>() ?: return@after
-                            view.handBatteryTextView(
-                                removePercent,
-                                userTypeface,
-                                useBoldFont,
-                                customFontSize,
-                                applyToIcon
+                    method {
+                        name {
+                            it in setOf(
+                                "bind\$initView",
+                                "updateText",
+                                "bind\$updateOldHorizontal",
+                                "bind\$updateOldHorizontalViewContent",
+                                "bind\$updatePercentOutView",
+                                "bind\$updateBatteryIconStyle"
                             )
                         }
-                    }
-
-                    firstMethodOrNull { name = "bind\$updateOldHorizontal" }?.hook {
+                    }.hookAll {
                         after {
-                            args.filterIsInstance<TextView>().forEachIndexed { _, view ->
-                                view.handBatteryTextView(
-                                    removePercent,
-                                    userTypeface,
-                                    useBoldFont,
-                                    customFontSize,
-                                    applyToIcon
-                                )
-                            }
-                        }
-                    }
-
-                    firstMethodOrNull { name = "bind\$updatePercentOutView" }?.hook {
-                        after {
-                            args.filterIsInstance<TextView>().forEachIndexed { _, view ->
+                            args.filterIsInstance<TextView>().forEach { view ->
                                 view.handBatteryTextView(
                                     removePercent,
                                     userTypeface,
@@ -105,7 +77,8 @@ object StatusBarBatteryView : YukiBaseHooker() {
         override fun onHook() {
             val removePercent =
                 preferences(ModulePrefs).getBoolean("remove_statusbar_battery_percent", false)
-            val userTypeface = preferences(ModulePrefs).getBoolean("statusbar_power_user_typeface", false)
+            val userTypeface =
+                preferences(ModulePrefs).getBoolean("statusbar_power_user_typeface", false)
             val useBoldFont =
                 preferences(ModulePrefs).getBoolean("statusbar_power_use_bold_font_style", false)
             val customFontSize = preferences(ModulePrefs).getInt("statusbar_power_font_size", 0)
