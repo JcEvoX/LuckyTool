@@ -24,7 +24,7 @@ object BluetoothIconRelated : YukiBaseHooker() {
         VariousClass(
             "com.oplusos.systemui.statusbar.phone.PhoneStatusBarPolicyEx", //C13
             "com.oplus.systemui.statusbar.phone.OplusPhoneStatusBarPolicyExImpl" //C14
-        ).toClass().resolve().apply {
+        ).toClass().resolve().optional(true).apply {
             firstMethodOrNull { name = "updateBluetoothIcon";parameterCount = 4 }?.hook {
                 before {
                     if (!isHide) return@before
