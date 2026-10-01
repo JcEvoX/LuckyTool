@@ -124,6 +124,7 @@ import java.io.File
         "com.oplus.mediacontroller",
         "com.oplus.exsystemservice",
         "com.oplus.keyguard.clock.base",
+        "com.oplus.keyguard.personality.clocks",
         "com.oplus.beaconlink",
         "com.heytap.speechassist",
         "com.oplus.wirelesssettings",
