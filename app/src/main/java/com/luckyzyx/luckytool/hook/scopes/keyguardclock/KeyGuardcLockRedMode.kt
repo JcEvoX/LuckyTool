@@ -11,7 +11,8 @@ import org.luckypray.dexkit.DexKitBridge
 @Obfuscate
 class KeyGuardcLockRedMode(val dexKitBridge: DexKitBridge) : YukiBaseHooker() {
     override fun onHook() {
-        val redMode = preferences(ModulePrefs).getString("lock_screen_clock_redone_mode", "0")
+        var redMode = preferences(ModulePrefs).getString("lock_screen_clock_redone_mode", "0")
+        dataChannel.wait<String>("lock_screen_clock_redone_mode") { redMode = it }
 
         //Source CustomizedTextView -> BrandUtils
         dexKitBridge.findClass {

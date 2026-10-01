@@ -29,6 +29,7 @@ import com.luckyzyx.luckytool.hook.hookers.HookGallery
 import com.luckyzyx.luckytool.hook.hookers.HookGesture
 import com.luckyzyx.luckytool.hook.hookers.HookHealth
 import com.luckyzyx.luckytool.hook.hookers.HookKeyguardClock
+import com.luckyzyx.luckytool.hook.hookers.HookKeyguardPersonality
 import com.luckyzyx.luckytool.hook.hookers.HookLauncher
 import com.luckyzyx.luckytool.hook.hookers.HookMarket
 import com.luckyzyx.luckytool.hook.hookers.HookMediaController
@@ -199,6 +200,7 @@ class MainHook : YukiHookXposedModule {
 
         //经典主题 Clock
         loadApp("com.oplus.keyguard.clock.base", HookKeyguardClock)
+        loadApp("com.oplus.keyguard.personality.clocks", HookKeyguardPersonality)
 
         //通知管理
         loadApp("com.oplus.notificationmanager", HookNotificationManager)
