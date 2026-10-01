@@ -1,6 +1,7 @@
 package com.luckyzyx.luckytool.hook.scopes.settings
 
 import android.app.AppOpsManager
+import android.content.Context
 import com.highcapable.kavaref.KavaRef.Companion.resolve
 import com.highcapable.kavaref.extension.classOf
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
@@ -32,7 +33,8 @@ object DisableAppArchivingUI : YukiBaseHooker() {
                     val packageName =
                         firstField { name = "mPackageName" }.of(instance).get<String>()
                             ?: return@intercept proceed()
-                    val context = appContext ?: return@intercept proceed()
+                    val context = firstField { type = Context::class }.of(instance).get<Context>()
+                        ?: return@intercept proceed()
                     val appOps = context.getSystemService(classOf<AppOpsManager>())
                         ?: return@intercept proceed()
                     //默认态(3)与显式关闭(1)均显示关，仅用户明确打开(0)才显示开
