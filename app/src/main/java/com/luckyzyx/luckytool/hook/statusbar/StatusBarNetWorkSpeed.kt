@@ -55,7 +55,8 @@ object StatusBarNetWorkSpeed : YukiBaseHooker() {
                     if (schedule != null) {
                         schedule.hook {
                             before {
-                                if (networkSpeed && args(0).long() > 1000L) args(0).set(1000L)
+                                if (networkSpeed && (arg(0).get<Long>() ?: 0L) > 1000L)
+                                    arg(0).set(1000L)
                             }
                         }
                         return@apply
