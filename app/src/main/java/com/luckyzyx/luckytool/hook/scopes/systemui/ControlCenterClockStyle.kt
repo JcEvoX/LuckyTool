@@ -25,8 +25,9 @@ object ControlCenterClockStyle : YukiBaseHooker() {
         val osCode = getOSVersionCode
 
         val rmClock = preferences(ModulePrefs).getBoolean("remove_control_center_clock_view", false)
-        if (osCode in 34..39 && rmClock) {
-            loadHooker(RemoveControlCenterClock)
+        if (rmClock) {
+            if (osCode >= 40) loadHooker(RemoveControlCenterClock)
+            else if (osCode >= 34) loadHooker(RemoveControlCenterClockV16)
         }
 
         if (SDK == A11) loadHooker(ControlCenterClockStyleA11)
@@ -35,6 +36,27 @@ object ControlCenterClockStyle : YukiBaseHooker() {
 
     @Obfuscate
     object RemoveControlCenterClock : YukiBaseHooker() {
+        override fun onHook() {
+            //Source OplusQSQuickEntranceComponent
+            "com.oplus.systemui.plugins.qs.quickentrance.OplusQSQuickEntranceComponent".toClassOrNull()
+                ?: return
+            //Source Clock
+            "com.android.systemui.statusbar.policy.Clock".toClass().resolve().method {
+                name { it == "onAttachedToWindow" || it == "updateClock" }
+            }.hookAll {
+                after {
+                    val view = instance<TextView>()
+                    val name = safeOfNull { view.resources.getResourceEntryName(view.id) }
+                    if (name == "oplus_qs_clock" || name == "qs_footer_clock") {
+                        view.isVisible = false
+                    }
+                }
+            }
+        }
+    }
+
+    @Obfuscate
+    object RemoveControlCenterClockV16 : YukiBaseHooker() {
         override fun onHook() {
             val newQsClock =
                 "com.oplus.systemui.plugins.qs.quickentrance.OplusQSQuickEntranceComponent".toClassOrNull()

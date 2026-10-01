@@ -55,7 +55,7 @@ class StatusBarControlCenter : BaseScopePreferenceFeagment() {
                 title = getString(R.string.remove_control_center_clock_view)
                 key = "remove_control_center_clock_view"
                 setDefaultValue(false)
-                isVisible = osCode in 34..39
+                isVisible = osCode >= 34
                 isIconSpaceReserved = false
                 setOnPreferenceChangeListener { _, _ ->
                     (activity as MainActivity).restart()
