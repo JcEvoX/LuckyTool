@@ -50,6 +50,7 @@ in [TG Channel’s associated groups](https://t.me/LuckyTool)**
 - [适配] 移除重命名文件字数限制 v17.9.16(064a5da)
 - [适配] 锁屏时钟红一样式 C17
 - [适配] 移除通知中心时钟 C17
+- [适配] 移除左下角旋转屏幕按钮 C17
 
 ### 1.3.4
 
