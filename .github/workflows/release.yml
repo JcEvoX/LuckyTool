@@ -1,0 +1,96 @@
+name: Release
+
+# 推送 v* 版本标签时触发编译并发布到 GitHub Release；
+# 也可手动触发（Actions -> Release -> Run workflow，可指定分支）。
+#
+# 说明：默认未在仓库配置正式签名密钥，会使用一次性 keytool 密钥产出可安装 APK
+# （无法覆盖安装已发布正式版）。如需正式签名，请在
+# Settings -> Secrets 配置：
+#   ANDROID_SIGNING_KEY          base64 编码的 keystore 文件
+#   ANDROID_KEYSTORE_PASSWORD    keystore 口令
+#   ANDROID_KEY_ALIAS            密钥别名
+#   ANDROID_KEY_PASSWORD         密钥口令
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build release artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # 完整历史 + tags：用于生成 Release notes。
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses > /dev/null 2>&1 || true
+
+      # compileSdk = 37（见 build.gradle.kts），稳定通道可能尚未收录，回退到预览通道。
+      - name: Install Android platform
+        run: |
+          sdkmanager --install "platforms;android-37" \
+            || sdkmanager --install --channel=3 "platforms;android-37"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # 根 build.gradle.kts 在配置阶段无条件加载 keystore/keystore.properties，
+      # 缺失会直接构建失败。未配置正式密钥时用一次性 keytool 密钥兜底。
+      - name: Provide signing keystore
+        env:
+          ANDROID_SIGNING_KEY: ${{ secrets.ANDROID_SIGNING_KEY }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          mkdir -p keystore
+          if [ -n "$ANDROID_SIGNING_KEY" ]; then
+            echo "$ANDROID_SIGNING_KEY" | base64 -d > keystore/ci.jks
+            STORE_PASS="$ANDROID_KEYSTORE_PASSWORD"; ALIAS="$ANDROID_KEY_ALIAS"; KEY_PASS="$ANDROID_KEY_PASSWORD"
+          else
+            keytool -genkeypair -v -keystore keystore/ci.jks \
+              -storepass android -keypass android -alias luckyci \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=LuckyTool CI, OU=CI, O=JcEvoX, L=Unknown, ST=Unknown, C=CN"
+            STORE_PASS=android; ALIAS=luckyci; KEY_PASS=android
+          fi
+          cat > keystore/keystore.properties <<EOF
+          storeFile=$GITHUB_WORKSPACE/keystore/ci.jks
+          storePassword=$STORE_PASS
+          keyAlias=$ALIAS
+          keyPassword=$KEY_PASS
+          EOF
+
+      - name: Build release APK
+        run: ./gradlew :app:assembleRelease --stacktrace
+
+      - name: Package artifacts
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/*.apk dist/
+          ls -lh dist/
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk
+          generate_release_notes: true
+          draft: true
